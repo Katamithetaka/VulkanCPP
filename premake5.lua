@@ -6,8 +6,8 @@ workspace "VulkanWorkspace"
     -- toolset "clang"
 
     local vulkan_sdk = os.getenv("VULKAN_SDK")
-    local VULKAN_SDK_INCLUDE = vulkan_sdk .. "/Include"
-    local VULKAN_SDK_LIB = vulkan_sdk .. "/Lib"
+    local VULKAN_SDK_INCLUDE = vulkan_sdk .. "/include"
+    local VULKAN_SDK_LIB = vulkan_sdk .. "/lib"
 
 
     configurations { "Debug", "Release" }
