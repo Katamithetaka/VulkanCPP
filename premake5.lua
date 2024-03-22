@@ -1,5 +1,6 @@
 ---@diagnostic disable: undefined-global
 -- Premake 5 workspace
+outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 workspace "VulkanWorkspace"
 
@@ -8,8 +9,6 @@ workspace "VulkanWorkspace"
     local vulkan_sdk = os.getenv("VULKAN_SDK")
     local VULKAN_SDK_INCLUDE = vulkan_sdk .. "/include"
     local VULKAN_SDK_LIB = vulkan_sdk .. "/lib"
-
-    
 
     configurations { "Debug", "Release" }
     platforms { "x64" }
@@ -34,8 +33,9 @@ workspace "VulkanWorkspace"
         location "Main"
         language "C++"
         cppdialect "C++17"
-        targetdir "build/bin/%{cfg.buildcfg}"
-        objdir "build/obj/%{cfg.buildcfg}"
+        targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+        objdir ("obj/" .. outputdir .. "/%{prj.name}")
+
         files { "Main/include/**.hpp", "Main/src/**.cpp" }
         includedirs { "Main/include", "Engine/include", VULKAN_SDK_INCLUDE }
         links { "Engine" }
@@ -47,15 +47,18 @@ workspace "VulkanWorkspace"
         location "Engine"
         language "C++"
         cppdialect "C++17"
-        targetdir "build/bin/%{cfg.buildcfg}"
-        objdir "build/obj/%{cfg.buildcfg}"
+        targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+        objdir ("obj/" .. outputdir .. "/%{prj.name}")
         files { "Engine/**.hpp", "Engine/**.cpp" }
         includedirs { "Engine/include", VULKAN_SDK_INCLUDE }
-        libdirs { VULKAN_SDK_LIB }
+        libdirs { VULKAN_SDK_LIB, "Engine/vendor/glfw/include" }
         links { "vulkan-1" }
         flags { "FatalWarnings" }
         warnings "Extra"
 
-    --    links { "glfw", "glad", "stb_image" }
+        links { "GLFW",
+        --"glad", "stb_image" 
+        }
 
-    
+
+include "Engine/vendor/glfw"
