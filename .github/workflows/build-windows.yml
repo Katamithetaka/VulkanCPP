@@ -1,14 +1,10 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-name: Windows
+name: Windows Build
 
 on:
   pull_request:
     branches: [ "main" ]
-
+  push:
+    branches: [ "main" ]
 env:
   # Path to the solution file relative to the root of the project.
   SOLUTION_FILE_PATH: .
