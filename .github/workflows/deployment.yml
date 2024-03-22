@@ -79,7 +79,7 @@ jobs:
               id: linux-artifact
               uses: actions/download-artifact@v2
               with:
-                  name: build-linux
+                  name: build-ubuntu
                   path: ./bin/linux/linux-latest.tar.gz
             - name: Get Artifact from build windows step
               id: windows-artifact
