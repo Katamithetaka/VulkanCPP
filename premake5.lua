@@ -46,7 +46,7 @@ workspace "VulkanWorkspace"
         cppdialect "C++17"
         targetdir "build/bin/%{cfg.buildcfg}"
         objdir "build/obj/%{cfg.buildcfg}"
-        files { "engine/**.hpp", "engine/**.cpp" }
+        files { "Engine/**.hpp", "Engine/**.cpp" }
         includedirs { "Engine/include", VULKAN_SDK_INCLUDE }
         libdirs { VULKAN_SDK_LIB }
         links { "vulkan-1" }
