@@ -29,7 +29,7 @@ jobs:
               run: make
 
             - name: tar
-              run: tar -czvf bin/linux/linux-latest.tar.gz bin/
+              run: tar -czvf ./linux-latest.tar.gz bin/
 
             - name: Upload build artefact
               uses: actions/upload-artifact@v2
