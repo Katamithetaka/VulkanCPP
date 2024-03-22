@@ -1,4 +1,10 @@
 @echo off
+
+set script_dir=%~dp0
+rem get root directory
+set root_dir=%script_dir%..
+cd %root_dir%
+
 call .\scripts\build-msvc.cmd > build.log
 
 REM check if devenv is in path
@@ -22,16 +28,11 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM run the build/Debug/Main.exe
 call cls
 
 echo "Build successful"
-echo "===== Main.exe ====="
-call .\build\bin\Debug\Main.exe
-echo "===================="
 
 goto :eof
-
 
 :run_vs2022devcmd
 
@@ -52,4 +53,3 @@ if %errorlevel% neq 0 (
     echo "Failed to run VsDevCmd.bat: %errorlevel%"
     exit 1
 )
-
