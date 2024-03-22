@@ -41,7 +41,7 @@ jobs:
         runs-on: windows-latest
           
         steps:
-          - uses: actions/checkout@v3
+          - uses: actions/checkout@v4
             with:
               submodules: true
           
@@ -75,6 +75,9 @@ jobs:
         needs: [build-linux, build-windows]
 
         steps:
+            - uses: actions/checkout@v4
+              with:
+                submodules: true
             - name: Get Artifact from build linux step
               id: linux-artifact
               uses: actions/download-artifact@v2
