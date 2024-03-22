@@ -1,5 +1,13 @@
 @echo off
 
+
+if %1 == "" (
+    set build_type=Debug
+)
+else (
+    set build_type=%1
+)
+
 set script_dir=%~dp0
 rem get root directory
 set root_dir=%script_dir%..
@@ -20,7 +28,7 @@ if %errorlevel% neq 0 (
 
 
 REM build the solution
-devenv VulkanWorkspace.sln /Build "Debug|x64" >> build.log
+devenv VulkanWorkspace.sln /Build "%1|x64" >> build.log
 
 REM check if the build was successful
 if %errorlevel% neq 0 (

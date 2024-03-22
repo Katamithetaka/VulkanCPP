@@ -1,12 +1,15 @@
 Building configurations...
 Running action 'vs2022'...
-Done (52ms).
+Done (60ms).
 
 Microsoft Visual Studio 2022 Version 17.7.4.
 Copyright (C) Microsoft Corp. All rights reserved.
 Build started...
-1>------ Build started: Project: Main, Configuration: Debug x64 ------
-1>main.cpp
-1>Main.vcxproj -> C:\Users\takad\dev\cpp\vulkan\build\bin\Debug\Main.exe
-========== Build: 1 succeeded, 0 failed, 1 up-to-date, 0 skipped ==========
-========== Build started at 11:57 AM and took 01.659 seconds ==========
+1>------ Build started: Project: Engine, Configuration: Release x64 ------
+1>Engine.cpp
+1>Engine.vcxproj -> C:\Users\takad\dev\cpp\vulkan\build\bin\Release\Engine.lib
+2>------ Build started: Project: Main, Configuration: Release x64 ------
+2>main.cpp
+2>Main.vcxproj -> C:\Users\takad\dev\cpp\vulkan\build\bin\Release\Main.exe
+========== Build: 2 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========
+========== Build started at 12:22 PM and took 02.502 seconds ==========

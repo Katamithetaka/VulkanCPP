@@ -1,4 +1,4 @@
-set premake=./vendor/premake/windows/premake5.exe 
+set premake=.\vendor\premake\windows\premake5.exe 
 rem get script directory
 set script_dir=%~dp0
 rem get root directory
