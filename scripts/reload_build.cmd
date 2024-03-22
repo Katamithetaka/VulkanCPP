@@ -3,8 +3,7 @@
 
 if %1 == "" (
     set build_type=Debug
-)
-else (
+) else (
     set build_type=%1
 )
 

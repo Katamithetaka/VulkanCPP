@@ -5,4 +5,4 @@ rem get root directory
 set root_dir=%script_dir%..
 cd %root_dir%
 
-call "%premake%"  vs2022
+call "%premake%" vs2022

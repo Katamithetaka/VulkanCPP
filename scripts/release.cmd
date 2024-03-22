@@ -1,1 +1,1 @@
-call .\reload_build_run.cmd %1
+call .\reload_build_run.cmd Release
