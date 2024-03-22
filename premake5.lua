@@ -39,7 +39,8 @@ workspace "VulkanWorkspace"
         files { "Main/include/**.hpp", "Main/src/**.cpp" }
         includedirs { "Main/include", "Engine/include", VULKAN_SDK_INCLUDE }
         links { "Engine" }
-        flags { "FatalWarnings", "ExtraWarnings" }
+        flags { "FatalWarnings" }
+        warnings "Everything"
 
     project "Engine"
         kind "StaticLib"
@@ -52,7 +53,8 @@ workspace "VulkanWorkspace"
         includedirs { "Engine/include", VULKAN_SDK_INCLUDE }
         libdirs { VULKAN_SDK_LIB }
         links { "vulkan-1" }
-        flags { "FatalWarnings", "ExtraWarnings" }
+        flags { "FatalWarnings" }
+        warnings "Everything"
 
     --    links { "glfw", "glad", "stb_image" }
 
