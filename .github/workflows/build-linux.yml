@@ -31,9 +31,7 @@ jobs:
 
         - name: generate make files
           run: ./scripts/build-linux-gmake2.sh
-          
-        - name: configure
-          run: ./configure
+
         - name: make
           run: make
         - name: make check
