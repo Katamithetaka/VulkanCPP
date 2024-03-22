@@ -132,6 +132,7 @@ jobs:
                 body: ${{ steps.github_release.outputs.changelog}}
                 files: |
                     ./bin/**/*.zip
+                    ./bin/**/*.tar.gz
 
 
 
