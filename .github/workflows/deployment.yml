@@ -131,7 +131,7 @@ jobs:
                 fail_on_unmatched_files: true
                 body: ${{ steps.github_release.outputs.changelog}}
                 files: |
-                    ./bin/**.zip
+                    ./bin/**/*.zip
 
 
 
