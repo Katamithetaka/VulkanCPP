@@ -35,7 +35,7 @@ jobs:
               uses: actions/upload-artifact@v2
               with:
                 name: build-ubuntu
-                path: ./bin/linux/linux-latest.tar.gz
+                path: ./linux-latest.tar.gz
     
     build-windows:
         runs-on: windows-latest
@@ -58,7 +58,7 @@ jobs:
 
           # zip 
           - name: Zip
-            run: Compress-Archive -Path bin -DestinationPath bin.zip
+            run: Compress-Archive -Path bin -DestinationPath windows-latest.zip
 
           - name: Upload build artefact
             id: artifact
