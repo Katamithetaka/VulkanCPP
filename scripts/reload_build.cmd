@@ -15,7 +15,7 @@ cd %root_dir%
 call .\scripts\build-msvc.cmd > build.log
 
 REM check if devenv is in path
-call devenv > nul
+call devenv /? > nul
 if %errorlevel% neq 0 (
     call cls
     echo "devenv not found in path"
