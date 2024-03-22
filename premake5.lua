@@ -40,7 +40,7 @@ workspace "VulkanWorkspace"
         includedirs { "Main/include", "Engine/include", VULKAN_SDK_INCLUDE }
         links { "Engine" }
         flags { "FatalWarnings" }
-        warnings "Everything"
+        warnings "Extra"
 
     project "Engine"
         kind "StaticLib"
@@ -54,7 +54,7 @@ workspace "VulkanWorkspace"
         libdirs { VULKAN_SDK_LIB }
         links { "vulkan-1" }
         flags { "FatalWarnings" }
-        warnings "Everything"
+        warnings "Extra"
 
     --    links { "glfw", "glad", "stb_image" }
 
