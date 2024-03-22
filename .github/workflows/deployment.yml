@@ -33,7 +33,7 @@ jobs:
               run: tar -czvf ./linux-latest.tar.gz bin/
 
             - name: Upload build artefact
-              uses: actions/upload-artifact@v2
+              uses: actions/upload-artifact@v4
               with:
                 name: build-ubuntu
                 path: ./linux-latest.tar.gz
@@ -63,7 +63,7 @@ jobs:
 
           - name: Upload build artefact
             id: artifact
-            uses: actions/upload-artifact@v2
+            uses: actions/upload-artifact@v4
             with:
                 name: build-windows
                 path: ./windows-latest.zip
@@ -82,16 +82,16 @@ jobs:
                 submodules: true
             - name: Get Artifact from build linux step
               id: linux-artifact
-              uses: actions/download-artifact@v2
+              uses: actions/download-artifact@v4
               with:
                   name: build-ubuntu
-                  path: ./bin/linux/linux-latest.tar.gz
+                  path: ./bin/linux/
             - name: Get Artifact from build windows step
               id: windows-artifact
-              uses: actions/download-artifact@v2
+              uses: actions/download-artifact@v4
               with:
                 name: build-windows
-                path: ./bin/windows/windows-latest.zip
+                path: ./bin/windows/
 
             - name: Build Changelog
               id: github_release
@@ -131,8 +131,7 @@ jobs:
                 fail_on_unmatched_files: true
                 body: ${{ steps.github_release.outputs.changelog}}
                 files: |
-                    ./bin/windows/*.zip
-                    ./bin/linux/*.tar.gz
+                    ./bin/**.zip
 
 
 
