@@ -1,10 +1,8 @@
 @echo off
 
-
-if %1 == "" (
-    set build_type=Debug
-) else (
-    set build_type=%1
+rem default build to debug
+if "%1"=="" (
+    set "1=Debug"
 )
 
 set script_dir=%~dp0
@@ -27,7 +25,7 @@ if %errorlevel% neq 0 (
 
 
 REM build the solution
-devenv VulkanWorkspace.sln /Build "%1|x64" >> build.log
+msbuild VulkanWorkspace.sln /property:Configuration=Debug 
 
 REM check if the build was successful
 if %errorlevel% neq 0 (
