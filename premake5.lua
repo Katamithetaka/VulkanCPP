@@ -41,9 +41,10 @@ workspace "VulkanWorkspace"
         flags { "FatalWarnings" }
         warnings "Extra"
         links { "Engine", "GLFW" }
+        libdirs { VULKAN_SDK_LIB }
 
         filter "system:linux"
-            links { VULKAN_SDK_LIB .. "/libvulkan" }
+            links { "vulkan" }
 
         filter "system:windows"
             links { "vulkan-1" }
@@ -67,7 +68,7 @@ workspace "VulkanWorkspace"
         libdirs { VULKAN_SDK_LIB }
 
         filter "system:linux"
-            links { "libvulkan.so.1" }
+            links { "vulkan" }
 
         filter "system:windows"
             links { "vulkan-1" }
