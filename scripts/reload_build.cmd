@@ -34,7 +34,6 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-call cls
 
 echo "Build successful"
 

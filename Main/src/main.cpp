@@ -9,7 +9,7 @@
 #include <optional>
 #include <set>
 
-#pragma region Vulkan
+// Region Vulkan
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
@@ -99,9 +99,12 @@ private: // Vulkan Initialiazation
 
     // Instance
     void createInstance() {
+        __pragma(warning(push))
+        __pragma(warning(disable:4127))
         if (enableValidationLayers && !checkValidationLayerSupport()) {
             throw std::runtime_error("validation layers requested, but not available!");
         }
+        __pragma(warning(pop))
 
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -573,7 +576,8 @@ private:
     VkQueue presentQueue;
     VkQueue computeQueue;
 };
-#pragma endregion
+
+// EndRegion Vulkan
 
 int main() {
     HelloTriangleApplication app;
