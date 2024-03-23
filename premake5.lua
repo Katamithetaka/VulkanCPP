@@ -48,11 +48,17 @@ workspace "VulkanWorkspace"
         libdirs { VULKAN_SDK_LIB }
 
         filter "files:**.vert"
-            buildcommands { GLSLC .. " -o %{cfg.targetdir}/shaders/%{file.basename}.vert.spv %{file.relpath}" }
+            buildcommands {
+                "mkdir -p %{cfg.targetdir}/shaders",
+                GLSLC .. " -o %{cfg.targetdir}/shaders/%{file.basename}.vert.spv %{file.relpath}"
+            }
             buildoutputs { "%{cfg.targetdir}/shaders/%{file.basename}.vert.spv" }
 
         filter "files:**.frag"
-            buildcommands { GLSLC .. " -o %{cfg.targetdir}/shaders/%{file.basename}.frag.spv %{file.relpath}" }
+            buildcommands { 
+                "mkdir -p %{cfg.targetdir}/shaders",
+                GLSLC .. " -o %{cfg.targetdir}/shaders/%{file.basename}.frag.spv %{file.relpath}"
+            }
             buildoutputs { "%{cfg.targetdir}/shaders/%{file.basename}.frag.spv" }
 
         filter "system:linux"
@@ -92,14 +98,19 @@ workspace "VulkanWorkspace"
         filter "system:windows"
             links { "vulkan-1" }
 
-        filter "files:**.vert"
-            buildcommands { GLSLC .. " -o %{cfg.targetdir}/shaders/%{file.basename}.vert.spv %{file.relpath}" }
+            filter "files:**.vert"
+            buildcommands {
+                "mkdir -p %{cfg.targetdir}/shaders",
+                GLSLC .. " -o %{cfg.targetdir}/shaders/%{file.basename}.vert.spv %{file.relpath}"
+            }
             buildoutputs { "%{cfg.targetdir}/shaders/%{file.basename}.vert.spv" }
 
         filter "files:**.frag"
-            buildcommands { GLSLC .. " -o %{cfg.targetdir}/shaders/%{file.basename}.frag.spv %{file.relpath}" }
+            buildcommands {
+                "mkdir -p %{cfg.targetdir}/shaders",
+                GLSLC .. " -o %{cfg.targetdir}/shaders/%{file.basename}.frag.spv %{file.relpath}"
+            }
             buildoutputs { "%{cfg.targetdir}/shaders/%{file.basename}.frag.spv" }
-
 
 
 
