@@ -1,5 +1,8 @@
 ---@diagnostic disable: undefined-global
 -- Premake 5 workspace
+
+-- TODO: It has occured to me that if i ever want to support wayland I'll have to switch to CMake
+
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 workspace "VulkanWorkspace"
