@@ -30,7 +30,7 @@ jobs:
               run: make
 
             - name: tar
-              run: tar -czvf ./linux-latest.tar.gz bin/
+              run: tar -czvf ./linux-latest.tar.gz build/bin/
 
             - name: Upload build artefact
               uses: actions/upload-artifact@v4
@@ -59,7 +59,7 @@ jobs:
 
           # zip 
           - name: Zip
-            run: Compress-Archive -Path bin -DestinationPath windows-latest.zip
+            run: Compress-Archive -Path build/bin/ -DestinationPath windows-latest.zip
 
           - name: Upload build artefact
             id: artifact
