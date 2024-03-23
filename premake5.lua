@@ -38,11 +38,16 @@ workspace "VulkanWorkspace"
 
         files { "Main/include/**.hpp", "Main/src/**.cpp" }
         includedirs { "Main/include", "Engine/include", VULKAN_SDK_INCLUDE, "Engine/vendor/glfw/include", "Engine/vendor/glm/include" }
-        libdirs { VULKAN_SDK_LIB, }
-        links { "vulkan-1" }
         flags { "FatalWarnings" }
         warnings "Extra"
         links { "Engine", "GLFW" }
+
+        libdirs { VULKAN_SDK_LIB }
+        filter "system:linux"
+            links { "libvulkan.so.1" }
+
+        filter "system:windows"
+            links { "vulkan-1" }
 
     project "Engine"
         kind "StaticLib"
@@ -53,14 +58,21 @@ workspace "VulkanWorkspace"
         objdir ("build/obj/" .. outputdir .. "/%{prj.name}")
         files { "Engine/src/**.hpp", "Engine/src/**.cpp", "Engine/include/**.hpp" }
         includedirs { "Engine/include", VULKAN_SDK_INCLUDE, "Engine/vendor/glfw/include", "Engine/vendor/glm/include" }
-        libdirs { VULKAN_SDK_LIB, }
-        links { "vulkan-1" }
+
         flags { "FatalWarnings" }
         warnings "Extra"
 
         links { "GLFW"
         --"glad", "stb_image" 
         }
+        libdirs { VULKAN_SDK_LIB }
+
+        filter "system:linux"
+            links { "libvulkan.so.1" }
+
+        filter "system:windows"
+            links { "vulkan-1" }
+
 
 
 
