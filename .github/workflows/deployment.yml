@@ -27,7 +27,7 @@ jobs:
               run: ./scripts/build-linux-gmake2.sh
     
             - name: make
-              run: make
+              run: make config=release_x64
 
             - name: tar
               run: tar -czvf ./linux-latest.tar.gz build/bin/

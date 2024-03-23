@@ -12,6 +12,7 @@ workspace "VulkanWorkspace"
     local vulkan_sdk = os.getenv("VULKAN_SDK")
     local VULKAN_SDK_INCLUDE = vulkan_sdk .. "/include"
     local VULKAN_SDK_LIB = vulkan_sdk .. "/lib"
+    local GLSLC = vulkan_sdk .. "/bin/glslc"
 
     configurations { "Debug", "Release" }
     platforms { "x64" }
@@ -36,15 +37,23 @@ workspace "VulkanWorkspace"
         location "Main"
         language "C++"
         cppdialect "C++17"
-        targetdir ("build/bin/" .. outputdir .. "/%{prj.name}")
-        objdir ("build/obj/" .. outputdir .. "/%{prj.name}")
+        targetdir ("build/bin/" .. outputdir )
+        objdir ("build/obj/" .. outputdir )
 
-        files { "Main/include/**.hpp", "Main/src/**.cpp" }
+        files { "Main/include/**.hpp", "Main/src/**.cpp", "Main/shaders/**.vert", "Main/shaders/**.frag" }
         includedirs { "Main/include", "Engine/include", VULKAN_SDK_INCLUDE, "Engine/vendor/glfw/include", "Engine/vendor/glm/include" }
         flags { "FatalWarnings" }
         warnings "Extra"
         links { "Engine", "GLFW" }
         libdirs { VULKAN_SDK_LIB }
+
+        filter "files:**.vert"
+            buildcommands { GLSLC .. " -o %{cfg.targetdir}/shaders/%{file.basename}.vert.spv %{file.relpath}" }
+            buildoutputs { "%{cfg.targetdir}/shaders/%{file.basename}.vert.spv" }
+
+        filter "files:**.frag"
+            buildcommands { GLSLC .. " -o %{cfg.targetdir}/shaders/%{file.basename}.frag.spv %{file.relpath}" }
+            buildoutputs { "%{cfg.targetdir}/shaders/%{file.basename}.frag.spv" }
 
         filter "system:linux"
             links { "vulkan" }
@@ -57,9 +66,16 @@ workspace "VulkanWorkspace"
         location "Engine"
         language "C++"
         cppdialect "C++17"
-        targetdir ("build/bin/" .. outputdir .. "/%{prj.name}")
-        objdir ("build/obj/" .. outputdir .. "/%{prj.name}")
-        files { "Engine/src/**.hpp", "Engine/src/**.cpp", "Engine/include/**.hpp" }
+        targetdir ("build/bin/" .. outputdir )
+        objdir ("build/obj/" .. outputdir )
+        files {
+            "Engine/src/**.hpp",
+            "Engine/src/**.cpp",
+            "Engine/include/**.hpp",
+            "Engine/shaders/**.vert",
+            "Engine/shaders/**.frag"
+        }
+
         includedirs { "Engine/include", VULKAN_SDK_INCLUDE, "Engine/vendor/glfw/include", "Engine/vendor/glm/include" }
 
         flags { "FatalWarnings" }
@@ -75,6 +91,14 @@ workspace "VulkanWorkspace"
 
         filter "system:windows"
             links { "vulkan-1" }
+
+        filter "files:**.vert"
+            buildcommands { GLSLC .. " -o %{cfg.targetdir}/shaders/%{file.basename}.vert.spv %{file.relpath}" }
+            buildoutputs { "%{cfg.targetdir}/shaders/%{file.basename}.vert.spv" }
+
+        filter "files:**.frag"
+            buildcommands { GLSLC .. " -o %{cfg.targetdir}/shaders/%{file.basename}.frag.spv %{file.relpath}" }
+            buildoutputs { "%{cfg.targetdir}/shaders/%{file.basename}.frag.spv" }
 
 
 

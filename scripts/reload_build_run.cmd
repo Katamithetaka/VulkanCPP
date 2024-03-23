@@ -14,6 +14,7 @@ if "%1"=="" (
 call .\scripts\reload_build.cmd %build_type%
 
 echo "===== Main.exe ====="
-echo .\build\bin\%build_type%-windows-x86_64\Main\Main.exe
-call .\build\bin\%build_type%-windows-x86_64\Main\Main.exe
+pushd .\build\bin\%build_type%-windows-x86_64
+call .\Main.exe
+popd
 echo "===================="

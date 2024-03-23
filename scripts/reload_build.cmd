@@ -34,7 +34,6 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-
 echo "Build successful"
 
 goto :eof

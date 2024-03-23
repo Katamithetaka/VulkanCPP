@@ -9,3 +9,4 @@
 .vs/
 build/
 build.log
+Makefile
