@@ -38,7 +38,9 @@ workspace "VulkanWorkspace"
 
         files { "Main/include/**.hpp", "Main/src/**.cpp" }
         includedirs { "Main/include", "Engine/include", VULKAN_SDK_INCLUDE, "Engine/vendor/glfw/include", "Engine/vendor/glm/include" }
-        links { "Engine" }
+        links { "Engine", "GLFW" }
+        libdirs { VULKAN_SDK_LIB, }
+        links { "vulkan-1" }
         flags { "FatalWarnings" }
         warnings "Extra"
 
