@@ -8,6 +8,7 @@
 #include <map>
 #include <optional>
 #include <set>
+#include <algorithm>
 
 // Region Vulkan
 
@@ -20,9 +21,9 @@ const std::vector<const char*> validationLayers = {
 };
 
 #ifdef NDEBUG
-    const bool enableValidationLayers = false;
+    constexpr bool enableValidationLayers = false;
 #else
-    const bool enableValidationLayers = true;
+    constexpr bool enableValidationLayers = true;
 #endif
 
 struct QueueFamilyIndices {
@@ -99,13 +100,12 @@ private: // Vulkan Initialiazation
 
     // Instance
     void createInstance() {
-        __pragma(warning(push))
-        __pragma(warning(disable:4127))
-        if (enableValidationLayers && !checkValidationLayerSupport()) {
-            throw std::runtime_error("validation layers requested, but not available!");
-        }
-        __pragma(warning(pop))
-
+        if constexpr (enableValidationLayers) {
+            if (!checkValidationLayerSupport()) {
+                throw std::runtime_error("validation layers requested, but not available!");
+            }
+        } 
+        
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "Hello Triangle";
