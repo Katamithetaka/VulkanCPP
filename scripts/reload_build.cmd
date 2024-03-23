@@ -2,9 +2,10 @@
 
 rem default build to debug
 if "%1"=="" (
-    set "1=Debug"
+    set build_type="Debug"
+) else (
+    set build_type=%1
 )
-
 set script_dir=%~dp0
 rem get root directory
 set root_dir=%script_dir%..
@@ -25,7 +26,7 @@ if %errorlevel% neq 0 (
 
 
 REM build the solution
-msbuild VulkanWorkspace.sln /property:Configuration=Debug 
+msbuild VulkanWorkspace.sln /property:Configuration=%build_type% 
 
 REM check if the build was successful
 if %errorlevel% neq 0 (

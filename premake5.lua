@@ -33,11 +33,11 @@ workspace "VulkanWorkspace"
         location "Main"
         language "C++"
         cppdialect "C++17"
-        targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-        objdir ("obj/" .. outputdir .. "/%{prj.name}")
+        targetdir ("build/bin/" .. outputdir .. "/%{prj.name}")
+        objdir ("build/obj/" .. outputdir .. "/%{prj.name}")
 
         files { "Main/include/**.hpp", "Main/src/**.cpp" }
-        includedirs { "Main/include", "Engine/include", VULKAN_SDK_INCLUDE }
+        includedirs { "Main/include", "Engine/include", VULKAN_SDK_INCLUDE, "Engine/vendor/glfw/include", "Engine/vendor/glm/include" }
         links { "Engine" }
         flags { "FatalWarnings" }
         warnings "Extra"
@@ -47,18 +47,20 @@ workspace "VulkanWorkspace"
         location "Engine"
         language "C++"
         cppdialect "C++17"
-        targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-        objdir ("obj/" .. outputdir .. "/%{prj.name}")
-        files { "Engine/**.hpp", "Engine/**.cpp" }
-        includedirs { "Engine/include", VULKAN_SDK_INCLUDE }
-        libdirs { VULKAN_SDK_LIB, "Engine/vendor/glfw/include" }
+        targetdir ("build/bin/" .. outputdir .. "/%{prj.name}")
+        objdir ("build/obj/" .. outputdir .. "/%{prj.name}")
+        files { "Engine/src/**.hpp", "Engine/src/**.cpp", "Engine/include/**.hpp" }
+        includedirs { "Engine/include", VULKAN_SDK_INCLUDE, "Engine/vendor/glfw/include", "Engine/vendor/glm/include" }
+        libdirs { VULKAN_SDK_LIB, }
         links { "vulkan-1" }
         flags { "FatalWarnings" }
         warnings "Extra"
 
-        links { "GLFW",
+        links { "GLFW"
         --"glad", "stb_image" 
         }
+
+
 
 
 include "Engine/vendor/glfw"
