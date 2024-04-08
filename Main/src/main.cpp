@@ -501,7 +501,7 @@ private: // Vulkan Initialiazation
             queuePriorities.push_back(std::vector<float>(queueFamily.queueCount, 1.0f));
         }
 
-        for (int i = 0; i < queueCreateInfos.size(); i++)
+        for (size_t i = 0; i < queueCreateInfos.size(); i++)
         {
             queueCreateInfos[i].pQueuePriorities = queuePriorities[i].data();
         }
@@ -951,7 +951,9 @@ private: // Vulkan Initialiazation
 
     void createVertexBuffer()
     {
-        VkBufferCreateInfo bufferInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+        VkBufferCreateInfo bufferInfo = {};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.flags = 0;
         bufferInfo.size = vertices.size() * sizeof(Vertex);
         bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
