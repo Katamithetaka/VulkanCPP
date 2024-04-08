@@ -9,6 +9,8 @@
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 
+#include <vulkan_memory_allocator/vk_mem_alloc.h>
+
 namespace Engine {
     int add(int a, int b);
 }

@@ -9,9 +9,9 @@ workspace "VulkanWorkspace"
 
     -- toolset "clang"
 
-    local vulkan_sdk = os.getenv("VULKAN_SDK")
-    local VULKAN_SDK_INCLUDE = vulkan_sdk .. "/include"
-    local VULKAN_SDK_LIB = vulkan_sdk .. "/lib"
+    vulkan_sdk = os.getenv("VULKAN_SDK")
+    VULKAN_SDK_INCLUDE = vulkan_sdk .. "/include"
+    VULKAN_SDK_LIB = vulkan_sdk .. "/lib"
     local GLSLC = vulkan_sdk .. "/bin/glslc"
 
     configurations { "Debug", "Release" }
@@ -41,10 +41,17 @@ workspace "VulkanWorkspace"
         objdir ("build/obj/" .. outputdir )
 
         files { "Main/include/**.hpp", "Main/src/**.cpp", "Main/shaders/**.vert", "Main/shaders/**.frag" }
-        includedirs { "Main/include", "Engine/include", VULKAN_SDK_INCLUDE, "Engine/vendor/glfw/include", "Engine/vendor/glm/include" }
+        includedirs {
+            "Main/include",
+            "Engine/include",
+            VULKAN_SDK_INCLUDE,
+            "Engine/vendor/glfw/include",
+            "Engine/vendor/glm/include",
+            "Engine/vendor/vulkan_memory_allocator/include",
+        }
         flags { "FatalWarnings" }
         warnings "Extra"
-        links { "Engine", "GLFW" }
+        links { "Engine", "GLFW", "VulkanMemoryAllocator" }
         libdirs { VULKAN_SDK_LIB }
 
         filter "files:**.vert"
@@ -74,6 +81,7 @@ workspace "VulkanWorkspace"
         cppdialect "C++17"
         targetdir ("build/bin/" .. outputdir )
         objdir ("build/obj/" .. outputdir )
+
         files {
             "Engine/src/**.hpp",
             "Engine/src/**.cpp",
@@ -82,12 +90,18 @@ workspace "VulkanWorkspace"
             "Engine/shaders/**.frag"
         }
 
-        includedirs { "Engine/include", VULKAN_SDK_INCLUDE, "Engine/vendor/glfw/include", "Engine/vendor/glm/include" }
+        includedirs {
+            "Engine/include",
+            VULKAN_SDK_INCLUDE,
+            "Engine/vendor/glfw/include",
+            "Engine/vendor/glm/include",
+            "Engine/vendor/vulkan_memory_allocator/include",
+        }
 
         flags { "FatalWarnings" }
         warnings "Extra"
 
-        links { "GLFW"
+        links { "GLFW", "VulkanMemoryAllocator"
         --"glad", "stb_image" 
         }
         libdirs { VULKAN_SDK_LIB }
@@ -116,3 +130,5 @@ workspace "VulkanWorkspace"
 
 
 include "Engine/vendor/glfw"
+include "Engine/vendor/vulkan_memory_allocator"
+

@@ -12,8 +12,13 @@
 #include <limits>
 #include <cstdint>
 #include <fstream>
-
+#include <array>
+#include <functional>
+#include <sstream>
+#include <chrono>
 // Region Vulkan
+
+#include "queue_families.hpp"
 
 const int WIDTH = 800;
 const int HEIGHT = 800;
@@ -31,24 +36,60 @@ constexpr bool enableValidationLayers = false;
 constexpr bool enableValidationLayers = true;
 #endif
 
-struct QueueFamilyIndices
-{
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-    std::optional<uint32_t> computeFamily;
-
-    bool isComplete()
-    {
-        return graphicsFamily.has_value() && computeFamily.has_value() && presentFamily.has_value();
-    }
-};
-
 struct SwapChainSupportDetails
 {
     VkSurfaceCapabilitiesKHR capabilities;
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
 };
+
+struct Vertex
+{
+    glm::vec2 pos;
+    glm::vec3 color;
+
+    static VkVertexInputBindingDescription getBindingDescription()
+    {
+        VkVertexInputBindingDescription bindingDescription{};
+        bindingDescription.binding = 0;
+        bindingDescription.stride = sizeof(Vertex);
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        return bindingDescription;
+    }
+
+    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions()
+    {
+        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+
+        attributeDescriptions[0].binding = 0;
+        attributeDescriptions[0].location = 0;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[0].offset = offsetof(Vertex, pos);
+
+        attributeDescriptions[1].binding = 0;
+        attributeDescriptions[1].location = 1;
+        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+        return attributeDescriptions;
+    }
+};
+
+struct Buffer
+{
+    VkBuffer buffer;
+    VmaAllocation allocation;
+};
+
+struct VertexBuffer : public Buffer
+{
+};
+
+const std::vector<Vertex> vertices = {
+    {{0.0f, -0.5f}, {1.0f, 1.0f, 1.0f}},
+    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
 class HelloTriangleApplication
 {
@@ -86,19 +127,50 @@ private:
         std::cerr << "Created Framebuffers" << std::endl;
         createCommandPool();
         std::cerr << "Created Command Pool" << std::endl;
+        createVMAAllocator();
+        std::cerr << "Created VMA Allocator" << std::endl;
+        createVertexBuffer();
+        std::cerr << "Created Vertex Buffer" << std::endl;
         createCommandBuffer();
         std::cerr << "Created Command Buffer" << std::endl;
         createSyncObjects();
         std::cerr << "Created Sync Objects" << std::endl;
     }
-    
 
     void mainLoop()
     {
+
         while (!glfwWindowShouldClose(window))
         {
+
             glfwPollEvents();
+            
+            auto currentTime = std::chrono::steady_clock::now();
+            duration elapsed = currentTime - previousTime;
+            previousTime = currentTime;
+
+            this->frameTime += elapsed.count();
+
+            if(this->frameTime >= 1.0)
+            {
+                double fps = (double)frameCount;
+
+                std::stringstream ss;
+                ss << "Vulkan!" << " [" << fps << " FPS]";
+
+                glfwSetWindowTitle(window, ss.str().c_str());
+
+                frameCount = 0;
+                frameTime -= 1.0;
+            }
+            
+            
+            
             drawFrame();
+
+            ++frameCount;
+            previousTime = currentTime;
+
         }
         vkDeviceWaitIdle(device);
     }
@@ -107,6 +179,9 @@ private:
     {
 
         cleanupSwapChain();
+
+        vmaDestroyBuffer(allocator, vertexBuffer.buffer, vertexBuffer.allocation);
+        vmaDestroyAllocator(allocator);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -119,7 +194,6 @@ private:
 
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
         vkDestroyPipeline(device, graphicsPipeline, nullptr);
-
 
         vkDestroyRenderPass(device, renderPass, nullptr);
 
@@ -139,26 +213,31 @@ private:
         glfwTerminate();
     }
 
-    void cleanupSwapChain() {
-        for (auto framebuffer : swapChainFramebuffers) {
+    void cleanupSwapChain()
+    {
+        for (auto framebuffer : swapChainFramebuffers)
+        {
             vkDestroyFramebuffer(device, framebuffer, nullptr);
         }
 
-        for (auto imageView : swapChainImageViews) {
+        for (auto imageView : swapChainImageViews)
+        {
             vkDestroyImageView(device, imageView, nullptr);
         }
 
         vkDestroySwapchainKHR(device, swapChain, nullptr);
     }
 
-    void recreateSwapChain() {
+    void recreateSwapChain()
+    {
         int width = 0, height = 0;
         glfwGetFramebufferSize(window, &width, &height);
-        while (width == 0 || height == 0) {
+        while (width == 0 || height == 0)
+        {
             glfwGetFramebufferSize(window, &width, &height);
             glfwWaitEvents();
         }
-        
+
         vkDeviceWaitIdle(device);
 
         cleanupSwapChain();
@@ -184,6 +263,8 @@ private:
 
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+
+        previousTime = std::chrono::steady_clock::now();
     }
 
     static void framebufferResizeCallback(GLFWwindow *window, int width, int height)
@@ -193,6 +274,7 @@ private:
         auto app = reinterpret_cast<HelloTriangleApplication *>(glfwGetWindowUserPointer(window));
         app->framebufferResized = true;
     }
+
 private:
     static void glfwError(int id, const char *description)
     {
@@ -259,7 +341,7 @@ private: // Vulkan Initialiazation
         createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         createInfo.messageSeverity =
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+            // VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
@@ -297,132 +379,6 @@ private: // Vulkan Initialiazation
 
     // Queue Families
 
-    std::pair<std::vector<VkQueueFamilyProperties>, QueueFamilyIndices> findQueueFamilies(VkPhysicalDevice _physicalDevice)
-    {
-        QueueFamilyIndices indices;
-
-        uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(_physicalDevice, &queueFamilyCount, nullptr);
-
-        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(_physicalDevice, &queueFamilyCount, queueFamilies.data());
-
-        int i = 0;
-        std::optional<int> graphicsFamily = std::nullopt;
-        std::optional<int> computeFamily = std::nullopt;
-        std::optional<int> graphicsAndComputeFamily = std::nullopt;
-        std::optional<int> graphicsPresentAndComputeFamily = std::nullopt;
-        std::optional<int> presentFamily = std::nullopt;
-        std::optional<int> graphicsAndPresentFamily = std::nullopt;
-        std::optional<int> computeOnlyQueue = std::nullopt;
-        std::optional<int> graphicsOnlyQueue = std::nullopt;
-
-        for (const auto &queueFamily : queueFamilies)
-        {
-            // if we're going to create a queue with both graphics and compute capabilities,
-            // we need to make sure that the queue can have multiple queuecount
-            if (queueFamily.queueCount > 1 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT && queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
-            {
-                graphicsAndComputeFamily = i;
-            }
-
-            if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT && !(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT))
-            {
-                computeOnlyQueue = i;
-            }
-
-            if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT && !(queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT))
-            {
-                graphicsOnlyQueue = i;
-            }
-
-            if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            {
-                graphicsFamily = i;
-            }
-
-            if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
-            {
-                computeFamily = i;
-            }
-
-            VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(_physicalDevice, i, surface, &presentSupport);
-
-            if (queueFamily.queueCount > 0 && presentSupport && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            {
-                graphicsAndPresentFamily = i;
-            }
-
-            // if we're going to create a queue with both graphics and compute capabilities,
-            // we need to make sure that the queue can have multiple queuecount
-            if (queueFamily.queueCount > 1 && presentSupport && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT && queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
-            {
-                graphicsPresentAndComputeFamily = i;
-            }
-
-            if (presentSupport)
-            {
-                indices.presentFamily = i;
-            }
-
-            i++;
-        }
-
-        if (computeOnlyQueue.has_value())
-        {
-            indices.computeFamily = computeOnlyQueue;
-        }
-        else if (graphicsPresentAndComputeFamily.has_value())
-        {
-            indices.computeFamily = graphicsPresentAndComputeFamily;
-        }
-        else if (graphicsAndComputeFamily.has_value())
-        {
-            indices.computeFamily = graphicsAndComputeFamily;
-        }
-        else
-        {
-            indices.computeFamily = computeFamily;
-        }
-
-        if (indices.computeFamily.has_value() && indices.computeFamily == graphicsPresentAndComputeFamily)
-        {
-            indices.graphicsFamily = graphicsPresentAndComputeFamily;
-        }
-        else if (graphicsAndPresentFamily.has_value())
-        {
-            indices.graphicsFamily = graphicsAndPresentFamily;
-        }
-        else if (graphicsOnlyQueue.has_value())
-        {
-            indices.graphicsFamily = graphicsOnlyQueue;
-        }
-        else if (graphicsAndComputeFamily.has_value())
-        {
-            indices.graphicsFamily = graphicsAndComputeFamily;
-        }
-        else
-        {
-            indices.graphicsFamily = graphicsFamily;
-        }
-
-        if (indices.graphicsFamily.has_value() && indices.graphicsFamily == graphicsPresentAndComputeFamily)
-        {
-            indices.presentFamily = graphicsPresentAndComputeFamily;
-        }
-        else if (graphicsAndPresentFamily.has_value())
-        {
-            indices.presentFamily = graphicsAndPresentFamily;
-        }
-        else
-        {
-            indices.presentFamily = presentFamily;
-        }
-
-        return std::pair(queueFamilies, indices);
-    }
-
     // Physical Device
 
     bool isDeviceSuitable(VkPhysicalDevice _physicalDevice)
@@ -433,19 +389,10 @@ private: // Vulkan Initialiazation
         VkPhysicalDeviceFeatures deviceFeatures;
         vkGetPhysicalDeviceFeatures(_physicalDevice, &deviceFeatures);
 
-        auto pair = findQueueFamilies(_physicalDevice);
+        auto queueIndices = findQueueFamilies(_physicalDevice, surface);
 
         (void)deviceProperties;
         (void)deviceFeatures;
-
-        auto computeQueueFamily = pair.second.computeFamily;
-        auto graphicsQueueFamily = pair.second.graphicsFamily;
-
-        if (computeQueueFamily.has_value() && graphicsQueueFamily.has_value() && computeQueueFamily.value() == graphicsQueueFamily.value())
-        {
-            // check that 2 queues can be created with the same family
-            return pair.first[computeQueueFamily.value()].queueCount > 1;
-        }
 
         bool swapChainAdequate = false;
         if (checkDeviceExtensions(_physicalDevice))
@@ -454,7 +401,7 @@ private: // Vulkan Initialiazation
             swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
         }
 
-        return pair.second.isComplete() && swapChainAdequate;
+        return queueIndices.isComplete() && swapChainAdequate;
     }
 
     int rateDeviceSuitability(VkPhysicalDevice _physicalDevice)
@@ -473,12 +420,18 @@ private: // Vulkan Initialiazation
             score += 1000;
         }
 
-        auto indices = findQueueFamilies(_physicalDevice);
+        auto indices = findQueueFamilies(_physicalDevice, surface);
 
         // Always better to have a separate compute queue
-        if (indices.second.computeFamily != indices.second.graphicsFamily)
+        if (indices.computeFamily.value().family != indices.graphicsFamily.value().family)
         {
             score += 200;
+        }
+
+        // Even better to have a transfer queue
+        if (indices.transferFamily.value().family != indices.graphicsFamily.value().family && indices.transferFamily.value().family != indices.computeFamily.value().family)
+        {
+            score += 100;
         }
 
         // Maximum possible size of textures affects graphics quality
@@ -531,50 +484,26 @@ private: // Vulkan Initialiazation
 
     void createLogicalDevice()
     {
-        auto pair = findQueueFamilies(physicalDevice);
-        auto indices = pair.second;
-        (void)pair;
+        auto indices = findQueueFamilies(physicalDevice, surface);
+        queueFamilyIndices = indices;
 
-        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+        std::cerr << "Graphics Family: " << indices.graphicsFamily.value().family << " (index: " << indices.graphicsFamily.value().queueIndex << ")\n"
+                  << "Present Family: " << indices.presentFamily.value().family << " (index: " << indices.presentFamily.value().queueIndex << ")\n"
+                  << "Compute Family: " << indices.computeFamily.value().family << " (index: " << indices.computeFamily.value().queueIndex << ")\n"
+                  << "Transfer Family: " << indices.transferFamily.value().family  << " (index: " << indices.transferFamily.value().queueIndex << ")" << std::endl;
 
-        if (indices.graphicsFamily == indices.computeFamily)
+        auto queueCreateInfos = indices.createQueueCreateInfos();
+        std::vector<std::vector<float>> queuePriorities;
+
+
+        for (const auto &queueFamily : queueCreateInfos)
         {
-            VkDeviceQueueCreateInfo queueCreateInfo{};
-            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
-            queueCreateInfo.queueCount = 2;
-            float queuePriority = 1.0f;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
-            queueCreateInfos.push_back(queueCreateInfo);
-        }
-        else
-        {
-            VkDeviceQueueCreateInfo graphicsQueueCreateInfo{};
-            graphicsQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            graphicsQueueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
-            graphicsQueueCreateInfo.queueCount = 1;
-            float graphicsQueuePriority = 1.0f;
-            graphicsQueueCreateInfo.pQueuePriorities = &graphicsQueuePriority;
-            queueCreateInfos.push_back(graphicsQueueCreateInfo);
-
-            VkDeviceQueueCreateInfo computeQueueCreateInfo{};
-            computeQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            computeQueueCreateInfo.queueFamilyIndex = indices.computeFamily.value();
-            computeQueueCreateInfo.queueCount = 1;
-            float computeQueuePriority = 1.0f;
-            computeQueueCreateInfo.pQueuePriorities = &computeQueuePriority;
-            queueCreateInfos.push_back(computeQueueCreateInfo);
+            queuePriorities.push_back(std::vector<float>(queueFamily.queueCount, 1.0f));
         }
 
-        if (indices.presentFamily != indices.graphicsFamily)
+        for (int i = 0; i < queueCreateInfos.size(); i++)
         {
-            VkDeviceQueueCreateInfo presentQueueCreateInfo{};
-            presentQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            presentQueueCreateInfo.queueFamilyIndex = indices.presentFamily.value();
-            presentQueueCreateInfo.queueCount = 1;
-            float presentQueuePriority = 1.0f;
-            presentQueueCreateInfo.pQueuePriorities = &presentQueuePriority;
-            queueCreateInfos.push_back(presentQueueCreateInfo);
+            queueCreateInfos[i].pQueuePriorities = queuePriorities[i].data();
         }
 
         VkPhysicalDeviceFeatures deviceFeatures{};
@@ -605,17 +534,10 @@ private: // Vulkan Initialiazation
             throw std::runtime_error("failed to create logical device!");
         }
 
-        vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
-        vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
-
-        if (indices.computeFamily == indices.graphicsFamily)
-        {
-            vkGetDeviceQueue(device, indices.computeFamily.value(), 1, &computeQueue);
-        }
-        else
-        {
-            vkGetDeviceQueue(device, indices.computeFamily.value(), 0, &computeQueue);
-        }
+        vkGetDeviceQueue(device, indices.graphicsFamily.value().family, indices.graphicsFamily.value().queueIndex, &graphicsQueue);
+        vkGetDeviceQueue(device, indices.presentFamily.value().family, indices.presentFamily.value().queueIndex, &presentQueue);
+        vkGetDeviceQueue(device, indices.computeFamily.value().family, indices.computeFamily.value().queueIndex, &computeQueue);
+        vkGetDeviceQueue(device, indices.transferFamily.value().family, indices.transferFamily.value().queueIndex, &transferQueue);
     }
 
     // Swapchain
@@ -637,7 +559,7 @@ private: // Vulkan Initialiazation
     {
         for (const auto &availablePresentMode : availablePresentModes)
         {
-            if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+            if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
             {
                 return availablePresentMode;
             }
@@ -693,15 +615,14 @@ private: // Vulkan Initialiazation
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         createInfo.imageExtent = extent;
 
-        auto pair = findQueueFamilies(physicalDevice);
-        auto indices = pair.second;
+        auto indices = queueFamilyIndices;
 
-        uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
-        if (indices.graphicsFamily != indices.presentFamily)
+        uint32_t _queueFamilyIndices[] = {indices.graphicsFamily.value().family, indices.presentFamily.value().family};
+        if (indices.graphicsFamily.value().family != indices.presentFamily.value().family)
         {
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             createInfo.queueFamilyIndexCount = 2;
-            createInfo.pQueueFamilyIndices = queueFamilyIndices;
+            createInfo.pQueueFamilyIndices = _queueFamilyIndices;
         }
         else
         {
@@ -778,8 +699,7 @@ private: // Vulkan Initialiazation
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &colorAttachmentRef;
-        
-        
+
         VkSubpassDependency dependency{};
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
         dependency.dstSubpass = 0;
@@ -787,7 +707,6 @@ private: // Vulkan Initialiazation
         dependency.srcAccessMask = 0;
         dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        
 
         VkRenderPassCreateInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -849,20 +768,22 @@ private: // Vulkan Initialiazation
 
         std::vector<VkDynamicState> dynamicStates = {
             VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR
-        };
+            VK_DYNAMIC_STATE_SCISSOR};
 
         VkPipelineDynamicStateCreateInfo dynamicState{};
         dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
         dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
         dynamicState.pDynamicStates = dynamicStates.data();
 
+        auto bindingDescription = Vertex::getBindingDescription();
+        auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = 0;
-        vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
-        vertexInputInfo.vertexAttributeDescriptionCount = 0;
-        vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+        vertexInputInfo.vertexBindingDescriptionCount = 1;
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+        vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -963,7 +884,8 @@ private: // Vulkan Initialiazation
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
         pipelineInfo.basePipelineIndex = -1;              // Optional
 
-        if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+        if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create graphics pipeline!");
         }
 
@@ -1000,19 +922,58 @@ private: // Vulkan Initialiazation
     // Command Pool
     void createCommandPool()
     {
-        auto pair = findQueueFamilies(physicalDevice);
-        auto indices = pair.second;
-        (void)pair;
+        auto indices = queueFamilyIndices;
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.queueFamilyIndex = indices.graphicsFamily.value();
+        poolInfo.queueFamilyIndex = indices.graphicsFamily.value().family;
         poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
 
         if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create graphics command pool!");
         }
+    }
+
+    // Vulkan Memory Allocator
+
+    void createVMAAllocator()
+    {
+        VmaAllocatorCreateInfo allocatorInfo = {};
+        allocatorInfo.physicalDevice = physicalDevice;
+        allocatorInfo.device = device;
+        allocatorInfo.instance = instance;
+
+        vmaCreateAllocator(&allocatorInfo, &allocator);
+    }
+
+    // Vertex Buffer
+
+    void createVertexBuffer()
+    {
+        VkBufferCreateInfo bufferInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+        bufferInfo.size = vertices.size() * sizeof(Vertex);
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        VmaAllocationCreateInfo allocInfo = {};
+        allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
+        allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+
+        VkBuffer &buffer = vertexBuffer.buffer;
+        VmaAllocation &allocation = vertexBuffer.allocation;
+
+        if (vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create vertex buffer!");
+        }
+
+        void *data;
+        vmaMapMemory(allocator, allocation, &data);
+
+        memcpy(data, vertices.data(), (size_t)bufferInfo.size);
+
+        vmaUnmapMemory(allocator, allocation);
     }
 
     // Command Buffers
@@ -1025,20 +986,23 @@ private: // Vulkan Initialiazation
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.commandPool = commandPool;
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
+        allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
 
-        if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+        if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to allocate command buffers!");
         }
     }
 
-    void recordCommandBuffer(VkCommandBuffer _commandBuffer, uint32_t imageIndex) {
+    void recordCommandBuffer(VkCommandBuffer _commandBuffer, uint32_t imageIndex)
+    {
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = 0; // Optional
+        beginInfo.flags = 0;                  // Optional
         beginInfo.pInheritanceInfo = nullptr; // Optional
 
-        if (vkBeginCommandBuffer(_commandBuffer, &beginInfo) != VK_SUCCESS) {
+        if (vkBeginCommandBuffer(_commandBuffer, &beginInfo) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to begin recording command buffer!");
         }
 
@@ -1071,18 +1035,24 @@ private: // Vulkan Initialiazation
         scissor.extent = swapChainExtent;
         vkCmdSetScissor(_commandBuffer, 0, 1, &scissor);
 
-        vkCmdDraw(_commandBuffer, 6, 1, 0, 0);
+        VkBuffer vertexBuffers[] = {vertexBuffer.buffer};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(_commandBuffer, 0, 1, vertexBuffers, offsets);
+
+        vkCmdDraw(_commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
         vkCmdEndRenderPass(_commandBuffer);
 
-        if (vkEndCommandBuffer(_commandBuffer) != VK_SUCCESS) {
+        if (vkEndCommandBuffer(_commandBuffer) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to record command buffer!");
         }
     }
 
     // Sync objects
 
-    void createSyncObjects() {
+    void createSyncObjects()
+    {
         imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
@@ -1094,40 +1064,42 @@ private: // Vulkan Initialiazation
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
             if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
                 vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-                vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+                vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
+            {
 
                 throw std::runtime_error("failed to create synchronization objects for a frame!");
             }
         }
     }
 
-
 private: // Drawing logic (actions ran every frame)
-
-    void drawFrame() {
-        VkFence& inFlightFence = inFlightFences[currentFrame];
-        VkSemaphore& imageAvailableSemaphore = imageAvailableSemaphores[currentFrame];
-        VkSemaphore& renderFinishedSemaphore = renderFinishedSemaphores[currentFrame];
-        VkCommandBuffer& commandBuffer = commandBuffers[currentFrame];
-
+    void drawFrame()
+    {
+        VkFence &inFlightFence = inFlightFences[currentFrame];
+        VkSemaphore &imageAvailableSemaphore = imageAvailableSemaphores[currentFrame];
+        VkSemaphore &renderFinishedSemaphore = renderFinishedSemaphores[currentFrame];
+        VkCommandBuffer &commandBuffer = commandBuffers[currentFrame];
 
         vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;
         VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
             recreateSwapChain();
             return;
-        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        }
+        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        {
             throw std::runtime_error("failed to acquire swap chain image!");
         }
 
         vkResetFences(device, 1, &inFlightFence);
-
 
         vkResetCommandBuffer(commandBuffer, 0);
 
@@ -1147,7 +1119,8 @@ private: // Drawing logic (actions ran every frame)
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
+        if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
@@ -1165,13 +1138,15 @@ private: // Drawing logic (actions ran every frame)
 
         result = vkQueuePresentKHR(presentQueue, &presentInfo);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
+        {
             framebufferResized = false;
             recreateSwapChain();
-        } else if (result != VK_SUCCESS) {
+        }
+        else if (result != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to present swap chain image!");
         }
-
 
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
@@ -1413,10 +1388,12 @@ private:
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    QueueFamilyIndices queueFamilyIndices;
     VkDevice device;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
     VkQueue computeQueue;
+    VkQueue transferQueue;
     VkSurfaceKHR surface;
     VkSwapchainKHR swapChain;
     VkFormat swapChainImageFormat;
@@ -1428,12 +1405,23 @@ private:
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
     VkCommandPool commandPool;
+    VmaAllocator allocator;
+    VertexBuffer vertexBuffer;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
     uint32_t currentFrame = 0;
     bool framebufferResized = false;
+    std::chrono::steady_clock::time_point previousTime;
+
+    typedef std::chrono::duration<float> duration;
+
+
+    uint64_t frameCount = 0;
+    float frameTime = 0.0;
+
+    
 };
 
 // EndRegion Vulkan
