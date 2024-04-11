@@ -39,6 +39,7 @@ workspace "VulkanWorkspace"
         cppdialect "C++17"
         targetdir ("build/bin/" .. outputdir )
         objdir ("build/obj/" .. outputdir )
+        debugdir ("build/bin/" .. outputdir)
 
         files { "Main/include/**.hpp", "Main/src/**.cpp", "Main/shaders/**.vert", "Main/shaders/**.frag" }
         includedirs {
